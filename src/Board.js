@@ -50,6 +50,42 @@ export default class Board extends React.Component {
       status: companyDetails[3],
     }));
   }
+  componentDidMount() {
+    // 1. Initialize Dragula on the three swimlane containers using their refs
+    this.drake = Dragula([
+      this.swimlanes.backlog.current,
+      this.swimlanes.inProgress.current,
+      this.swimlanes.complete.current
+    ]);
+
+    // 2. Listen for the 'drop' event to update state and change colors
+    this.drake.on('drop', (el, target, source, sibling) => {
+      // Get the task ID from the dragged element
+      const taskId = el.getAttribute('data-id');
+      
+      // Determine the new status based on which container it was dropped in
+      let newStatus;
+      if (target === this.swimlanes.backlog.current) newStatus = 'backlog';
+      else if (target === this.swimlanes.inProgress.current) newStatus = 'in-progress';
+      else if (target === this.swimlanes.complete.current) newStatus = 'complete';
+      else return; // If dropped somewhere unexpected, do nothing.
+
+      // Update the state to change the task's status
+      this.setState(prevState => ({
+        clients: {
+          backlog: prevState.clients.backlog.map(client => 
+            client.id === taskId ? { ...client, status: newStatus } : client
+          ),
+          inProgress: prevState.clients.inProgress.map(client => 
+            client.id === taskId ? { ...client, status: newStatus } : client
+          ),
+          complete: prevState.clients.complete.map(client => 
+            client.id === taskId ? { ...client, status: newStatus } : client
+          )
+        }
+      }));
+    });
+  }
   renderSwimlane(name, clients, ref) {
     return (
       <Swimlane name={name} clients={clients} dragulaRef={ref}/>
